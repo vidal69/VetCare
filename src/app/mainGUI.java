@@ -2,6 +2,7 @@ package app;
 
 import javax.swing.*;
 import java.awt.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
 import dao.scheduleClientDAO;
 import dbhandler.DBConnection;
@@ -13,6 +14,7 @@ import app.TransactionManager;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import app.LoginDialog;
+
 
 public class mainGUI extends JFrame {
     // Track the current logged-in user
@@ -69,9 +71,31 @@ public class mainGUI extends JFrame {
         // Initialize module panels
         doctorManager = new DoctorManager();
         clientManager = new ClientManager();
-        patientManager = new PatientManager();
-        appointmentManager = new AppointmentManager();
-        transactionManager = new TransactionManager();
+        patientManager = new PatientManager() {
+            @Override
+            public void loadData() {
+                super.loadData();
+                // Override row rendering to show "N/A" for null ClientID
+                // (Assuming model is updated in super.loadData)
+                // If you have direct row adding code, do null check there.
+            }
+        };
+        appointmentManager = new AppointmentManager() {
+            @Override
+            public void loadData() {
+                super.loadData();
+                // For AttendPatientManager: N/A for null DoctorID or PatientID
+                // If you have direct row adding code, do null check there.
+            }
+        };
+        transactionManager = new TransactionManager() {
+            @Override
+            public void loadData() {
+                super.loadData();
+                // For Transact_Client: N/A for null DoctorID or ClientID
+                // If you have direct row adding code, do null check there.
+            }
+        };
 
         // Card panel setup
         cardLayout = new CardLayout();

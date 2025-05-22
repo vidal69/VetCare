@@ -9,9 +9,15 @@ import java.util.List;
 import dao.transactClientDAO;
 import models.TransactClient;
 import utils.Validator;
+import dao.DoctorDAO;
+import dao.ClientDAO;
+import java.util.Vector;
+import javax.swing.JComboBox;
 
 public class TransactionManager extends JPanel {
     private transactClientDAO dao = new transactClientDAO();
+    private DoctorDAO doctorDao = new DoctorDAO();
+    private ClientDAO clientDao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
 
@@ -95,18 +101,24 @@ public class TransactionManager extends JPanel {
     }
 
     private void showTransactionDialog(TransactClient t) {
-        JTextField txtDoc = new JTextField();
-        JTextField txtClient = new JTextField();
+        // Dropdown for DoctorID
+        Vector<String> docIds = new Vector<>();
+        doctorDao.getAllDoctors().forEach(d -> docIds.add(d.getDoctorID()));
+        JComboBox<String> cbDoc = new JComboBox<>(docIds);
+        // Dropdown for ClientID
+        Vector<String> clientIds = new Vector<>();
+        clientDao.getAllClients().forEach(c -> clientIds.add(c.getClientID()));
+        JComboBox<String> cbClient = new JComboBox<>(clientIds);
         JTextField txtBills = new JTextField();
         JTextField txtReceipt = new JTextField();
         JTextField txtDate = new JTextField();
         JTextField txtTime = new JTextField();
 
         if (t != null) {
-            txtDoc.setText(t.getDoctorID());
-            txtDoc.setEditable(false);
-            txtClient.setText(t.getClientID());
-            txtClient.setEditable(false);
+            cbDoc.setSelectedItem(t.getDoctorID());
+            cbDoc.setEnabled(false);
+            cbClient.setSelectedItem(t.getClientID());
+            cbClient.setEnabled(false);
             txtBills.setText(t.getTotalBills());
             txtReceipt.setText(t.getReceipt());
             txtDate.setText(t.getTransactionDate().toString());
@@ -114,8 +126,8 @@ public class TransactionManager extends JPanel {
         }
 
         JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
-        panel.add(new JLabel("Doctor ID:")); panel.add(txtDoc);
-        panel.add(new JLabel("Client ID:")); panel.add(txtClient);
+        panel.add(new JLabel("Doctor ID:")); panel.add(cbDoc);
+        panel.add(new JLabel("Client ID:")); panel.add(cbClient);
         panel.add(new JLabel("Total Bills:")); panel.add(txtBills);
         panel.add(new JLabel("Receipt:")); panel.add(txtReceipt);
         panel.add(new JLabel("Date (YYYY-MM-DD):")); panel.add(txtDate);
@@ -126,8 +138,8 @@ public class TransactionManager extends JPanel {
             JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
-            if (!Validator.isValidID(txtDoc.getText()) ||
-                !Validator.isValidID(txtClient.getText()) ||
+            if (cbDoc.getSelectedItem() == null ||
+                cbClient.getSelectedItem() == null ||
                 !Validator.isNumeric(txtBills.getText()) ||
                 !Validator.isNotEmpty(txtReceipt.getText()) ||
                 !Validator.isValidDate(txtDate.getText()) ||
@@ -136,8 +148,8 @@ public class TransactionManager extends JPanel {
                 return;
             }
             TransactClient newT = new TransactClient(
-                txtDoc.getText().trim(),
-                txtClient.getText().trim(),
+                ((String) cbDoc.getSelectedItem()).trim(),
+                ((String) cbClient.getSelectedItem()).trim(),
                 txtBills.getText().trim(),
                 txtReceipt.getText().trim(),
                 LocalDate.parse(txtDate.getText().trim()),

@@ -11,8 +11,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import dao.ClientDAO;
+import java.util.Vector;
+import javax.swing.JComboBox;
+
 public class PatientManager extends JPanel {
     private PatientDAO dao = new PatientDAO();
+    private ClientDAO clientDao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
 
@@ -103,7 +108,10 @@ public class PatientManager extends JPanel {
         JTextField txtSpecies = new JTextField();
         JTextField txtBreed = new JTextField();
         JTextField txtRemarks = new JTextField();
-        JTextField txtClientID = new JTextField();
+        // Dropdown for ClientID
+        Vector<String> clientIds = new Vector<>();
+        clientDao.getAllClients().forEach(c -> clientIds.add(c.getClientID()));
+        JComboBox<String> cbClientID = new JComboBox<>(clientIds);
 
         if (p != null) {
             txtID.setText(p.getPatientID());
@@ -114,7 +122,7 @@ public class PatientManager extends JPanel {
             txtSpecies.setText(p.getSpecies());
             txtBreed.setText(p.getBreed());
             txtRemarks.setText(p.getRemarks());
-            txtClientID.setText(p.getClientID());
+            cbClientID.setSelectedItem(p.getClientID());
         }
 
         JPanel panel = new JPanel(new GridLayout(8, 2, 5, 5));
@@ -125,7 +133,7 @@ public class PatientManager extends JPanel {
         panel.add(new JLabel("Species:")); panel.add(txtSpecies);
         panel.add(new JLabel("Breed:")); panel.add(txtBreed);
         panel.add(new JLabel("Remarks:")); panel.add(txtRemarks);
-        panel.add(new JLabel("Client ID:")); panel.add(txtClientID);
+        panel.add(new JLabel("Client ID:")); panel.add(cbClientID);
 
         int result = JOptionPane.showConfirmDialog(this, panel,
             p == null ? "Add Patient" : "Edit Patient",
@@ -138,7 +146,7 @@ public class PatientManager extends JPanel {
             String genderText = ((String) cbGender.getSelectedItem()).trim();
             String speciesText = txtSpecies.getText().trim();
             String breedText = txtBreed.getText().trim();
-            String clientIdText = txtClientID.getText().trim();
+            String clientIdText = ((String) cbClientID.getSelectedItem()).trim();
 
             // PatientID
             if (!Validator.isValidID(idText)) {

@@ -1,6 +1,10 @@
 package app;
 
 import dao.scheduleClientDAO;
+import dao.DoctorDAO;
+import dao.ClientDAO;
+import java.util.Vector;
+import javax.swing.JComboBox;
 import models.ScheduleClient;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,6 +17,8 @@ import utils.Validator;
 
 public class AppointmentManager extends JPanel {
     private scheduleClientDAO dao = new scheduleClientDAO();
+    private DoctorDAO doctorDao = new DoctorDAO();
+    private ClientDAO clientDao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
 
@@ -98,8 +104,14 @@ public class AppointmentManager extends JPanel {
     }
 
     private void showAppointmentDialog(ScheduleClient sc) {
-        JTextField txtDoc = new JTextField();
-        JTextField txtClient = new JTextField();
+        // Dropdown for DoctorID
+        Vector<String> docIds = new Vector<>();
+        doctorDao.getAllDoctors().forEach(d -> docIds.add(d.getDoctorID()));
+        JComboBox<String> cbDoc = new JComboBox<>(docIds);
+        // Dropdown for ClientID
+        Vector<String> clientIds = new Vector<>();
+        clientDao.getAllClients().forEach(c -> clientIds.add(c.getClientID()));
+        JComboBox<String> cbClient = new JComboBox<>(clientIds);
         JTextField txtType = new JTextField();
         JTextField txtDate = new JTextField();
         JTextField txtTime = new JTextField();
@@ -107,10 +119,10 @@ public class AppointmentManager extends JPanel {
         JTextField txtRemarks = new JTextField();
 
         if (sc != null) {
-            txtDoc.setText(sc.getDoctorID());
-            txtDoc.setEditable(false);
-            txtClient.setText(sc.getClientID());
-            txtClient.setEditable(false);
+            cbDoc.setSelectedItem(sc.getDoctorID());
+            cbDoc.setEnabled(false);
+            cbClient.setSelectedItem(sc.getClientID());
+            cbClient.setEnabled(false);
             txtType.setText(sc.getAppointmentType());
             txtDate.setText(sc.getAppointmentDate().toString());
             txtTime.setText(sc.getAppointmentTime().toString());
@@ -119,8 +131,8 @@ public class AppointmentManager extends JPanel {
         }
 
         JPanel panel = new JPanel(new GridLayout(7, 2, 5, 5));
-        panel.add(new JLabel("Doctor ID:")); panel.add(txtDoc);
-        panel.add(new JLabel("Client ID:")); panel.add(txtClient);
+        panel.add(new JLabel("Doctor ID:")); panel.add(cbDoc);
+        panel.add(new JLabel("Client ID:")); panel.add(cbClient);
         panel.add(new JLabel("Type:")); panel.add(txtType);
         panel.add(new JLabel("Date (YYYY-MM-DD):")); panel.add(txtDate);
         panel.add(new JLabel("Time (HH:MM:SS):")); panel.add(txtTime);
@@ -133,8 +145,8 @@ public class AppointmentManager extends JPanel {
 
         if (result == JOptionPane.OK_OPTION) {
             // Validation
-            if (!Validator.isValidID(txtDoc.getText()) ||
-                !Validator.isValidID(txtClient.getText()) ||
+            if (cbDoc.getSelectedItem() == null ||
+                cbClient.getSelectedItem() == null ||
                 !Validator.isNotEmpty(txtType.getText()) ||
                 !Validator.isValidDate(txtDate.getText()) ||
                 !Validator.isValidTime(txtTime.getText()) ||
@@ -143,8 +155,8 @@ public class AppointmentManager extends JPanel {
                 return;
             }
             ScheduleClient newSc = new ScheduleClient(
-                txtDoc.getText().trim(),
-                txtClient.getText().trim(),
+                ((String) cbDoc.getSelectedItem()).trim(),
+                ((String) cbClient.getSelectedItem()).trim(),
                 txtType.getText().trim(),
                 LocalDate.parse(txtDate.getText().trim()),
                 LocalTime.parse(txtTime.getText().trim()),
