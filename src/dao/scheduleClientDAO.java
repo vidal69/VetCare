@@ -99,6 +99,30 @@ public class scheduleClientDAO {
         }
     }
 
+    public boolean updateAppointment(ScheduleClient original, ScheduleClient updated) {
+        String sql = "UPDATE Schedule_Client SET DoctorID = ?, ClientID = ?, AppointmentType = ?, AppointmentDate = ?, AppointmentTime = ?, Status = ?, Remarks = ? " +
+                     "WHERE DoctorID = ? AND ClientID = ? AND AppointmentDate = ? AND AppointmentTime = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, updated.getDoctorID());
+            ps.setString(2, updated.getClientID());
+            ps.setString(3, updated.getAppointmentType());
+            ps.setDate(4, Date.valueOf(updated.getAppointmentDate()));
+            ps.setTime(5, Time.valueOf(updated.getAppointmentTime()));
+            ps.setString(6, updated.getStatus());
+            ps.setString(7, updated.getRemarks());
+
+            ps.setString(8, original.getDoctorID());
+            ps.setString(9, original.getClientID());
+            ps.setDate(10, Date.valueOf(original.getAppointmentDate()));
+            ps.setTime(11, Time.valueOf(original.getAppointmentTime()));
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
     // Delete
     public boolean deleteAppointment(String doctorID, String clientID, LocalDate date, LocalTime time) {
         String sql = "DELETE FROM Schedule_Client WHERE DoctorID = ? AND ClientID = ? AND AppointmentDate = ? AND AppointmentTime = ?";
@@ -113,4 +137,29 @@ public class scheduleClientDAO {
             return false;
         }
     }
+
+    public List<ScheduleClient> searchAppointments(String column, String keyword) {
+        List<ScheduleClient> list = new ArrayList<>();
+        String sql = "SELECT * FROM Schedule_Client WHERE " + column + " LIKE ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + keyword + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ScheduleClient(
+                            rs.getString("DoctorID"),
+                            rs.getString("ClientID"),
+                            rs.getString("AppointmentType"),
+                            rs.getDate("AppointmentDate").toLocalDate(),
+                            rs.getTime("AppointmentTime").toLocalTime(),
+                            rs.getString("Status"),
+                            rs.getString("Remarks")
+                    ));
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
 }

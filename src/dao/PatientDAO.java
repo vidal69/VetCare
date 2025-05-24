@@ -5,6 +5,9 @@ import models.Patient;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +58,34 @@ public class PatientDAO {
         return list;
     }
 
+    /**
+     * Search patients by a given column and keyword.
+     */
+    public List<Patient> searchPatients(String column, String keyword) {
+        List<Patient> list = new ArrayList<>();
+        String sql = "SELECT * FROM Patient WHERE " + column + " LIKE ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + keyword + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Patient(
+                        rs.getString("PatientID"),
+                        rs.getString("Name"),
+                        rs.getDate("DateOfBirth").toLocalDate(),
+                        rs.getString("Gender"),
+                        rs.getString("Species"),
+                        rs.getString("Breed"),
+                        rs.getString("Remarks"),
+                        rs.getString("ClientID")
+                    ));
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
     // Read one by ID
     public Patient getPatientByID(String patientID) {
         String sql = "SELECT * FROM Patient WHERE PatientID = ?";
@@ -81,17 +112,18 @@ public class PatientDAO {
     }
 
     // Update
-    public boolean updatePatient(Patient patient) {
-        String sql = "UPDATE Patient SET Name = ?, DateOfBirth = ?, Gender = ?, Species = ?, Breed = ?, Remarks = ?, ClientID = ? WHERE PatientID = ?";
+    public boolean updatePatient(Patient original, Patient updated) {
+        String sql = "UPDATE Patient SET PatientID = ?, Name = ?, DateOfBirth = ?, Gender = ?, Species = ?, Breed = ?, Remarks = ?, ClientID = ? WHERE PatientID = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, patient.getName());
-            ps.setDate(2, Date.valueOf(patient.getDateOfBirth()));
-            ps.setString(3, patient.getGender());
-            ps.setString(4, patient.getSpecies());
-            ps.setString(5, patient.getBreed());
-            ps.setString(6, patient.getRemarks());
-            ps.setString(7, patient.getClientID());
-            ps.setString(8, patient.getPatientID());
+            ps.setString(1, updated.getPatientID());
+            ps.setString(2, updated.getName());
+            ps.setDate(3, Date.valueOf(updated.getDateOfBirth()));
+            ps.setString(4, updated.getGender());
+            ps.setString(5, updated.getSpecies());
+            ps.setString(6, updated.getBreed());
+            ps.setString(7, updated.getRemarks());
+            ps.setString(8, updated.getClientID());
+            ps.setString(9, original.getPatientID());
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
             ex.printStackTrace();

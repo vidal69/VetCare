@@ -2,23 +2,19 @@ package app;
 
 import javax.swing.*;
 import java.awt.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.event.*;
-import dao.scheduleClientDAO;
+
 import dbhandler.DBConnection;
 import java.sql.Connection;
 import javax.swing.Timer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import app.TransactionManager;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import app.LoginDialog;
 
 
 public class mainGUI extends JFrame {
     // Track the current logged-in user
-    private String currentUser = null;
+    private static String currentUser = null;
     private JList<String> navList;
     private CardLayout cardLayout;
     private JPanel cardPanel;
@@ -30,6 +26,20 @@ public class mainGUI extends JFrame {
     private PatientManager patientManager;
     private AppointmentManager appointmentManager;
     private TransactionManager transactionManager;
+
+    // Helper stubs — ensure these methods exist in each manager:
+    private void clearDoctorSearch() { doctorManager.clearSearch(); }
+    private void clearClientSearch() { clientManager.clearSearch(); }
+    private void clearPatientSearch() { patientManager.clearSearch(); }
+    private void clearAppointmentSearch() { appointmentManager.clearSearch(); }
+    private void clearTransactionSearch() { transactionManager.clearSearch(); }
+
+    /**
+     * Check if the currently logged-in user is an administrator.
+     */
+    public static boolean isAdmin() {
+        return "admin".equals(currentUser);
+    }
 
     private final String[] modules = {"Doctors", "Clients", "Patients", "Appointments", "Transactions"};
 
@@ -50,6 +60,8 @@ public class mainGUI extends JFrame {
         setSize(1000, 600);
         setLocationRelativeTo(null);
 
+        getContentPane().setLayout(new BorderLayout());
+
         // Initialize DB connection and status bar
         Connection conn = DBConnection.getConnection();
         statusBar = new JLabel(conn != null ? "Connected to VetCare" : "Database connection failed");
@@ -67,6 +79,7 @@ public class mainGUI extends JFrame {
         navList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         navList.setFixedCellWidth(120);
         navList.setSelectedIndex(0);
+        navList.setEnabled(true);
 
         // Initialize module panels
         doctorManager = new DoctorManager();
@@ -113,18 +126,23 @@ public class mainGUI extends JFrame {
                 cardLayout.show(cardPanel, sel);
                 switch (sel) {
                     case "Doctors":
+                        clearDoctorSearch();
                         doctorManager.loadData();
                         break;
                     case "Clients":
+                        clearClientSearch();
                         clientManager.loadData();
                         break;
                     case "Patients":
+                        clearPatientSearch();
                         patientManager.loadData();
                         break;
                     case "Appointments":
+                        clearAppointmentSearch();
                         appointmentManager.loadData();
                         break;
                     case "Transactions":
+                        clearTransactionSearch();
                         transactionManager.loadData();
                         break;
                 }
@@ -137,58 +155,28 @@ public class mainGUI extends JFrame {
         splitPane.setDividerLocation(150);
 
         // Toolbar
-        JToolBar toolBar = new JToolBar();
-        JButton btnRefreshAll = new JButton("Refresh");
-        btnRefreshAll.addActionListener(e -> {
-            String sel = navList.getSelectedValue();
-            switch (sel) {
-                case "Doctors": doctorManager.loadData(); break;
-                case "Clients": clientManager.loadData(); break;
-                case "Patients": patientManager.loadData(); break;
-                case "Appointments": appointmentManager.loadData(); break;
-                case "Transactions": transactionManager.loadData(); break;
-            }
-        });
-        toolBar.add(btnRefreshAll);
-        getContentPane().add(toolBar, BorderLayout.NORTH);
+
+
 
         // Layout
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(splitPane, BorderLayout.CENTER);
+        // getContentPane().setLayout(new BorderLayout());
+        // getContentPane().add(splitPane, BorderLayout.CENTER);
+        // btnRefreshAll.doClick();
+        // navList.setSelectedIndex(0);
 
         // Bottom panel with status bar and login control
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(statusBar, BorderLayout.WEST);
 
-        JButton btnLogin = new JButton("Login");
-        btnLogin.addActionListener(e -> {
-            if (currentUser == null) {
-                // Not logged in: show login dialog
-                LoginDialog dialog = new LoginDialog(this);
-                dialog.setVisible(true);
-                String user = dialog.getLoggedInUser();
-                if (user != null) {
-                    currentUser = user;
-                    btnLogin.setText("Logout (" + currentUser + ")");
-                    // TODO: enable/disable modules based on role
-                }
-            } else {
-                // Logged in: perform logout
-                int confirm = JOptionPane.showConfirmDialog(this,
-                    "Are you sure you want to logout?", "Confirm Logout", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    currentUser = null;
-                    btnLogin.setText("Login");
-                    // TODO: disable protected modules or reset UI
-                }
-            }
-        });
-        bottomPanel.add(btnLogin, BorderLayout.EAST);
-
         getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+        // Add the split pane (with nav and card panel) to the center
+        getContentPane().add(splitPane, BorderLayout.CENTER);
+        SwingUtilities.invokeLater(() -> {
+            navList.setSelectedIndex(0); // Triggers view and data load
+        });
 
-        // Initial load
-        doctorManager.loadData();
+        // Trigger a full refresh on startup
+        // btnRefreshAll.doClick();
     }
 
     public static void main(String[] args) {

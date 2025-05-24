@@ -1,4 +1,6 @@
 package app;
+import app.mainGUI;
+import javax.swing.JOptionPane;
 
 import dao.scheduleClientDAO;
 import dao.DoctorDAO;
@@ -14,6 +16,15 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import utils.Validator;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
+import javax.swing.JLabel;
+import java.awt.FlowLayout;
+import java.util.List;
+import models.ScheduleClient;
+import java.util.ArrayList;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class AppointmentManager extends JPanel {
     private scheduleClientDAO dao = new scheduleClientDAO();
@@ -21,9 +32,43 @@ public class AppointmentManager extends JPanel {
     private ClientDAO clientDao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
+    private JComboBox<String> cbFields;
+    private JTextField txtSearch;
+
+    private List<ScheduleClient> appointmentList = new ArrayList<>();
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private static final int PAGE_SIZE = 10;
+    private JButton prevBtn, nextBtn;
+    private JTextField pageField;
+    private JLabel totalPagesLabel;
+
+    private JButton btnAdd;
+    private JButton btnEdit;
+    private JButton btnDelete;
 
     public AppointmentManager() {
         setLayout(new BorderLayout());
+
+        // --- Search Panel ---
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        cbFields = new JComboBox<>(new String[]{
+            "DoctorID",
+            "ClientID",
+            "AppointmentType",
+            "AppointmentDate",
+            "AppointmentTime",
+            "Status"
+        });
+        txtSearch = new JTextField(15);
+        JButton btnSearch = new JButton("Search");
+        JButton btnClear  = new JButton("Clear");
+        searchPanel.add(new JLabel("Search by:"));
+        searchPanel.add(cbFields);
+        searchPanel.add(txtSearch);
+        searchPanel.add(btnSearch);
+        searchPanel.add(btnClear);
+        add(searchPanel, BorderLayout.NORTH);
 
         // Table model and table
         model = new DefaultTableModel(new Object[]{
@@ -35,13 +80,55 @@ public class AppointmentManager extends JPanel {
             }
         };
         table = new JTable(model);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Center panel with table and pagination
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Pagination controls
+        JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        prevBtn = new JButton("Prev");
+        nextBtn = new JButton("Next");
+        pageField = new JTextField(3);
+        pageField.setHorizontalAlignment(JTextField.CENTER);
+        totalPagesLabel = new JLabel(" of " + totalPages);
+        paginationPanel.add(prevBtn);
+        paginationPanel.add(new JLabel("Page "));
+        paginationPanel.add(pageField);
+        paginationPanel.add(totalPagesLabel);
+        paginationPanel.add(nextBtn);
+
+        // Pagination actions
+        prevBtn.addActionListener(e -> {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        });
+        nextBtn.addActionListener(e -> {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        });
+        pageField.addActionListener(e -> {
+            try {
+                int p = Integer.parseInt(pageField.getText().trim());
+                if (p >= 1 && p <= totalPages) {
+                    currentPage = p;
+                }
+            } catch (NumberFormatException ex) { }
+            updateTable();
+        });
+
+        centerPanel.add(paginationPanel, BorderLayout.SOUTH);
+        add(centerPanel, BorderLayout.CENTER);
 
         // Buttons
         JPanel buttons = new JPanel();
-        JButton btnAdd = new JButton("Add");
-        JButton btnEdit = new JButton("Edit");
-        JButton btnDelete = new JButton("Delete");
+        btnAdd = new JButton("Add");
+        btnEdit = new JButton("Edit");
+        btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
         buttons.add(btnAdd);
         buttons.add(btnEdit);
@@ -49,48 +136,76 @@ public class AppointmentManager extends JPanel {
         buttons.add(btnRefresh);
         add(buttons, BorderLayout.SOUTH);
 
-        // Button actions
+        // CRUD button listeners
         btnAdd.addActionListener(e -> showAppointmentDialog(null));
+
         btnEdit.addActionListener(e -> {
             int i = table.getSelectedRow();
             if (i >= 0) {
-                ScheduleClient sc = dao.getAppointment(
-                    (String) model.getValueAt(i, 0),
-                    (String) model.getValueAt(i, 1),
-                    LocalDate.parse((String) model.getValueAt(i, 3)),
-                    LocalTime.parse((String) model.getValueAt(i, 4))
-                );
-                showAppointmentDialog(sc);
+                // Edit the selected appointment
+                showAppointmentDialog(appointmentList.get(i));
             } else {
                 JOptionPane.showMessageDialog(this, "Select an appointment to edit.");
             }
         });
+
         btnDelete.addActionListener(e -> {
             int i = table.getSelectedRow();
             if (i >= 0) {
-                String docId = (String) model.getValueAt(i, 0);
-                String clientId = (String) model.getValueAt(i, 1);
-                LocalDate date = LocalDate.parse((String) model.getValueAt(i, 3));
-                LocalTime time = LocalTime.parse((String) model.getValueAt(i, 4));
+                ScheduleClient sc = appointmentList.get(i);
                 int confirm = JOptionPane.showConfirmDialog(this,
                     "Delete selected appointment?", "Confirm", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
-                    dao.deleteAppointment(docId, clientId, date, time);
+                  dao.deleteAppointment(
+                      sc.getDoctorID(),
+                      sc.getClientID(),
+                      sc.getAppointmentDate(),
+                      sc.getAppointmentTime()
+                  );
                     loadData();
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select an appointment to delete.");
             }
         });
+
         btnRefresh.addActionListener(e -> loadData());
 
-        loadData();
+
+        // Search action
+        btnSearch.addActionListener(e -> {
+            String field = (String) cbFields.getSelectedItem();
+            String keyword = txtSearch.getText().trim();
+            if (!keyword.isEmpty()) {
+                appointmentList = dao.searchAppointments(field, keyword);
+                currentPage = 1;
+                updateTable();
+            }
+        });
+        btnClear.addActionListener(e -> {
+            txtSearch.setText("");
+            // Reset to full appointment list and refresh current page
+            appointmentList = dao.getAllAppointments();
+            currentPage = 1;
+            updateTable();
+        });
+
     }
 
     public void loadData() {
+        appointmentList = dao.getAllAppointments();
+        currentPage = 1;
+        updateTable();
+    }
+
+    private void updateTable() {
         model.setRowCount(0);
-        List<ScheduleClient> list = dao.getAllAppointments();
-        for (ScheduleClient sc : list) {
+        int total = appointmentList.size();
+        totalPages = Math.max(1, (int)Math.ceil(total / (double)PAGE_SIZE));
+        int start = (currentPage - 1) * PAGE_SIZE;
+        int end = Math.min(start + PAGE_SIZE, total);
+        for (int i = start; i < end; i++) {
+            ScheduleClient sc = appointmentList.get(i);
             model.addRow(new Object[]{
                 sc.getDoctorID(),
                 sc.getClientID(),
@@ -101,7 +216,22 @@ public class AppointmentManager extends JPanel {
                 sc.getRemarks()
             });
         }
+        pageField.setText(String.valueOf(currentPage));
+        totalPagesLabel.setText(" of " + totalPages);
+        prevBtn.setEnabled(currentPage > 1);
+        nextBtn.setEnabled(currentPage < totalPages);
     }
+
+    /**
+     * Reset search controls and reload full table.
+     */
+    public void clearSearch() {
+        cbFields.setSelectedIndex(0);
+        txtSearch.setText("");
+        loadData();
+    }
+
+
 
     private void showAppointmentDialog(ScheduleClient sc) {
         // Dropdown for DoctorID
@@ -120,9 +250,7 @@ public class AppointmentManager extends JPanel {
 
         if (sc != null) {
             cbDoc.setSelectedItem(sc.getDoctorID());
-            cbDoc.setEnabled(false);
             cbClient.setSelectedItem(sc.getClientID());
-            cbClient.setEnabled(false);
             txtType.setText(sc.getAppointmentType());
             txtDate.setText(sc.getAppointmentDate().toString());
             txtTime.setText(sc.getAppointmentTime().toString());
@@ -166,7 +294,12 @@ public class AppointmentManager extends JPanel {
             if (sc == null) {
                 dao.addAppointment(newSc);
             } else {
-                dao.updateAppointment(newSc);
+       boolean success = dao.updateAppointment(sc, newSc);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Appointment updated successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update appointment.");
+                }
             }
             loadData();
         }
