@@ -253,7 +253,6 @@ public class ClientManager extends JPanel {
 
         if (c != null) {
             txtID.setText(c.getClientID());
-            // Allow editing the ID
             txtID.setEditable(true);
             txtFirst.setText(c.getFirstName());
             txtLast.setText(c.getLastName());
@@ -270,12 +269,13 @@ public class ClientManager extends JPanel {
         panel.add(new JLabel("Contact Info:")); panel.add(txtContact);
         panel.add(new JLabel("Bills:")); panel.add(txtBills);
 
-        int result = JOptionPane.showConfirmDialog(this, panel,
-            c == null ? "Add Client" : "Edit Client",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(this, panel,
+                c == null ? "Add Client" : "Edit Client",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        if (result == JOptionPane.OK_OPTION) {
-            // Gather and trim values
+            if (result != JOptionPane.OK_OPTION) break;
+
             String idText = txtID.getText().trim();
             String firstText = txtFirst.getText().trim();
             String lastText = txtLast.getText().trim();
@@ -283,52 +283,56 @@ public class ClientManager extends JPanel {
             String contactText = txtContact.getText().trim();
             String billsText = txtBills.getText().trim();
 
-            // ClientID
-            if (!Validator.isValidID(idText)) {
-                JOptionPane.showMessageDialog(this, "Client ID must follow pattern AAA-1234.");
-                return;
-            }
-            // First Name
-            if (!Validator.isNotEmpty(firstText) || !NAME_PATTERN.matcher(firstText).matches()) {
-                JOptionPane.showMessageDialog(this, "First name must contain only letters and spaces.");
-                return;
-            }
-            // Last Name
-            if (!Validator.isNotEmpty(lastText) || !NAME_PATTERN.matcher(lastText).matches()) {
-                JOptionPane.showMessageDialog(this, "Last name must contain only letters and spaces.");
-                return;
-            }
-            // Address
-            if (!Validator.isNotEmpty(addressText) || !ADDRESS_PATTERN.matcher(addressText).matches()) {
-                JOptionPane.showMessageDialog(this, "Address contains invalid characters.");
-                return;
-            }
-            // Contact Info (email or phone)
-            if (!Validator.isValidEmail(contactText) && !Validator.isValidPhone(contactText)) {
-                JOptionPane.showMessageDialog(this, "Contact Info must be a valid email or phone number.");
-                return;
-            }
-            // Bills (numeric)
-            if (!Validator.isNumeric(billsText)) {
-                JOptionPane.showMessageDialog(this, "Bills must be a numeric value.");
-                return;
+            String errorMsg = validateClientInput(idText, firstText, lastText, addressText, contactText, billsText);
+            if (errorMsg != null) {
+                JOptionPane.showMessageDialog(this, errorMsg, "Input Error", JOptionPane.ERROR_MESSAGE);
+                continue;
             }
 
-            Client newC = new Client(
-                idText,
-                firstText,
-                lastText,
-                addressText,
-                contactText,
-                billsText
-            );
+            Client newC = new Client(idText, firstText, lastText, addressText, contactText, billsText);
+            boolean success;
             if (c == null) {
-                dao.addClient(newC);
+                success = dao.addClient(newC);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Client added successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to add client.", "Add Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             } else {
-                dao.updateClient(c, newC);
+                success = dao.updateClient(c, newC);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Client updated successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update client.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             }
             loadData();
+            break;
         }
+    }
+
+    private String validateClientInput(String id, String first, String last, String address, String contact, String bills) {
+        if (!Validator.isValidID(id)) {
+            return "Client ID must follow the pattern AAA-1234.";
+        }
+        if (!Validator.isNotEmpty(first) || !NAME_PATTERN.matcher(first).matches()) {
+            return "First name must contain only letters and spaces.";
+        }
+        if (!Validator.isNotEmpty(last) || !NAME_PATTERN.matcher(last).matches()) {
+            return "Last name must contain only letters and spaces.";
+        }
+        if (!Validator.isNotEmpty(address) || !ADDRESS_PATTERN.matcher(address).matches()) {
+            return "Address contains invalid characters.";
+        }
+        if (!Validator.isValidEmail(contact) && !Validator.isValidPhone(contact)) {
+            return "Contact info must be a valid email or phone number.";
+        }
+        if (!Validator.isNumeric(bills)) {
+            return "Bills must be a numeric value.";
+        }
+        return null;
     }
 
     public ClientManager() {
