@@ -244,18 +244,20 @@ public class TransactionManager extends JPanel {
    }
 
     private void showTransactionDialog(TransactClient t) {
-        // Dropdown for DoctorID
+        // Dropdowns for DoctorID and ClientID
         Vector<String> docIds = new Vector<>();
         doctorDao.getAllDoctors().forEach(d -> docIds.add(d.getDoctorID()));
         JComboBox<String> cbDoc = new JComboBox<>(docIds);
-        // Dropdown for ClientID
+
         Vector<String> clientIds = new Vector<>();
         clientDao.getAllClients().forEach(c -> clientIds.add(c.getClientID()));
         JComboBox<String> cbClient = new JComboBox<>(clientIds);
+
         JTextField txtBills = new JTextField();
-        JComboBox<String> cbReceipt = new JComboBox<>(new String[] { "Sent", "Pending" });
+        JComboBox<String> cbReceipt = new JComboBox<>(new String[]{"Sent", "Pending"});
         JTextField txtDate = new JTextField();
         JTextField txtTime = new JTextField();
+
         if (t != null) {
             cbDoc.setSelectedItem(t.getDoctorID());
             cbClient.setSelectedItem(t.getClientID());
@@ -273,44 +275,85 @@ public class TransactionManager extends JPanel {
         panel.add(new JLabel("Date (YYYY-MM-DD):")); panel.add(txtDate);
         panel.add(new JLabel("Time (HH:MM:SS):")); panel.add(txtTime);
 
-        int result = JOptionPane.showConfirmDialog(this, panel,
-            t == null ? "Add Transaction" : "Edit Transaction",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(this, panel,
+                    t == null ? "Add Transaction" : "Edit Transaction",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        if (result == JOptionPane.OK_OPTION) {
-            if (cbDoc.getSelectedItem() == null ||
-                cbClient.getSelectedItem() == null ||
-                !Validator.isNumeric(txtBills.getText()) ||
-                !Validator.isNotEmpty((String) cbReceipt.getSelectedItem()) ||
-                !Validator.isValidDate(txtDate.getText()) ||
-                !Validator.isValidTime(txtTime.getText())) {
-                JOptionPane.showMessageDialog(this, "Please check your inputs.");
-                return;
+            if (result != JOptionPane.OK_OPTION) break;
+
+            String docID = (String) cbDoc.getSelectedItem();
+            String clientID = (String) cbClient.getSelectedItem();
+            String bills = txtBills.getText().trim();
+            String receipt = (String) cbReceipt.getSelectedItem();
+            String date = txtDate.getText().trim();
+            String time = txtTime.getText().trim();
+
+            String errorMsg = validateTransactionInput(docID, clientID, bills, receipt, date, time);
+            if (errorMsg != null) {
+                JOptionPane.showMessageDialog(this, errorMsg, "Input Error", JOptionPane.ERROR_MESSAGE);
+                continue;
             }
+
             TransactClient newT = new TransactClient(
-                ((String) cbDoc.getSelectedItem()).trim(),
-                ((String) cbClient.getSelectedItem()).trim(),
-                txtBills.getText().trim(),
-                ((String) cbReceipt.getSelectedItem()).trim(),
-                LocalDate.parse(txtDate.getText().trim()),
-                LocalTime.parse(txtTime.getText().trim())
+                    docID.trim(),
+                    clientID.trim(),
+                    bills,
+                    receipt.trim(),
+                    LocalDate.parse(date),
+                    LocalTime.parse(time)
             );
 
-
+            boolean success;
             if (t == null) {
-                dao.addTransaction(newT);
-                JOptionPane.showMessageDialog(this, "Transaction recorded successfully.");
+                success = dao.addTransaction(newT);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Transaction recorded successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to add transaction.", "Add Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             } else {
-                dao.updateTransaction(t, newT);
-                JOptionPane.showMessageDialog(this, "Transaction updated successfully.");
+                success = dao.updateTransaction(t, newT);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Transaction updated successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update transaction.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             }
 
-            // Re-fetch the full list and stay on the same page
+            // Refresh list and table
             transactionList = dao.getAllTransactions();
             int total = transactionList.size();
-            totalPages = Math.max(1, (int)Math.ceil(total / (double)PAGE_SIZE));
+            totalPages = Math.max(1, (int)Math.ceil(total / (double) PAGE_SIZE));
             if (currentPage > totalPages) currentPage = totalPages;
             updateTable();
+            break;
         }
     }
+
+    private String validateTransactionInput(String docID, String clientID, String bills, String receipt,
+                                            String date, String time) {
+        if (docID == null || docID.trim().isEmpty()) {
+            return "Doctor ID must be selected.";
+        }
+        if (clientID == null || clientID.trim().isEmpty()) {
+            return "Client ID must be selected.";
+        }
+        if (!Validator.isNumeric(bills)) {
+            return "Total bills must be numeric.";
+        }
+        if (!Validator.isNotEmpty(receipt)) {
+            return "Receipt status must be selected.";
+        }
+        if (!Validator.isValidDate(date)) {
+            return "Date must be in YYYY-MM-DD format.";
+        }
+        if (!Validator.isValidTime(time)) {
+            return "Time must be in HH:MM:SS format.";
+        }
+        return null;
+    }
+
 }
