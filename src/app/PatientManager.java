@@ -256,7 +256,8 @@ public class PatientManager extends JPanel {
         JTextField txtSpecies = new JTextField();
         JTextField txtBreed = new JTextField();
         JTextField txtRemarks = new JTextField();
-        // Dropdown for ClientID
+
+        // Populate client IDs
         Vector<String> clientIds = new Vector<>();
         clientDao.getAllClients().forEach(c -> clientIds.add(c.getClientID()));
         JComboBox<String> cbClientID = new JComboBox<>(clientIds);
@@ -283,73 +284,91 @@ public class PatientManager extends JPanel {
         panel.add(new JLabel("Remarks:")); panel.add(txtRemarks);
         panel.add(new JLabel("Client ID:")); panel.add(cbClientID);
 
-        int result = JOptionPane.showConfirmDialog(this, panel,
-            p == null ? "Add Patient" : "Edit Patient",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(this, panel,
+                    p == null ? "Add Patient" : "Edit Patient",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        if (result == JOptionPane.OK_OPTION) {
+            if (result != JOptionPane.OK_OPTION) break;
+
+            // Gather inputs
             String idText = txtID.getText().trim();
             String nameText = txtName.getText().trim();
             String dobText = txtDOB.getText().trim();
-            String genderText = ((String) cbGender.getSelectedItem()).trim();
+            String genderText = (String) cbGender.getSelectedItem();
             String speciesText = txtSpecies.getText().trim();
             String breedText = txtBreed.getText().trim();
-            String clientIdText = ((String) cbClientID.getSelectedItem()).trim();
+            String remarksText = txtRemarks.getText().trim();
+            String clientIdText = (String) cbClientID.getSelectedItem();
 
-            // PatientID
-            if (!Validator.isValidID(idText)) {
-                JOptionPane.showMessageDialog(this, "Patient ID must follow pattern AAA-1234.");
-                return;
-            }
-            // Name
-            if (!Validator.isNotEmpty(nameText) || !NAME_PATTERN.matcher(nameText).matches()) {
-                JOptionPane.showMessageDialog(this, "Name must contain only letters and spaces.");
-                return;
-            }
-            // DateOfBirth
-            if (!Validator.isValidDate(dobText)) {
-                JOptionPane.showMessageDialog(this, "Date of Birth must be a valid date (YYYY-MM-DD).");
-                return;
-            }
-            // Gender
-            if (!Validator.isNotEmpty(genderText) || !NAME_PATTERN.matcher(genderText).matches()) {
-                JOptionPane.showMessageDialog(this, "Gender must contain only letters.");
-                return;
-            }
-            // Species
-            if (!Validator.isNotEmpty(speciesText) || !SPECIES_PATTERN.matcher(speciesText).matches()) {
-                JOptionPane.showMessageDialog(this, "Species must contain only letters and spaces.");
-                return;
-            }
-            // Breed
-            if (!Validator.isNotEmpty(breedText) || !BREED_PATTERN.matcher(breedText).matches()) {
-                JOptionPane.showMessageDialog(this, "Breed must contain letters, numbers, and spaces only.");
-                return;
-            }
-            // ClientID
-            if (!Validator.isValidID(clientIdText)) {
-                JOptionPane.showMessageDialog(this, "Client ID must follow pattern AAA-1234.");
-                return;
+            // Validate
+            String errorMsg = validatePatientInput(idText, nameText, dobText, genderText, speciesText, breedText, clientIdText);
+            if (errorMsg != null) {
+                JOptionPane.showMessageDialog(this, errorMsg, "Input Error", JOptionPane.ERROR_MESSAGE);
+                continue;
             }
 
             Patient newP = new Patient(
-                idText,
-                nameText,
-                LocalDate.parse(dobText),
-                genderText,
-                speciesText,
-                breedText,
-                txtRemarks.getText().trim(),
-                clientIdText
+                    idText,
+                    nameText,
+                    LocalDate.parse(dobText),
+                    genderText,
+                    speciesText,
+                    breedText,
+                    remarksText,
+                    clientIdText
             );
+
+            boolean success;
             if (p == null) {
-                dao.addPatient(newP);
+                success = dao.addPatient(newP);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Patient added successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to add patient.", "Add Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             } else {
-                dao.updatePatient(p, newP);
+                success = dao.updatePatient(p, newP);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Patient updated successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to update patient.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
             }
+
             loadData();
+            break;
         }
     }
+
+    private String validatePatientInput(String id, String name, String dob, String gender,
+                                        String species, String breed, String clientId) {
+        if (!Validator.isValidID(id)) {
+            return "Patient ID must follow pattern AAA-1234.";
+        }
+        if (!Validator.isNotEmpty(name) || !NAME_PATTERN.matcher(name).matches()) {
+            return "Name must contain only letters and spaces.";
+        }
+        if (!Validator.isValidDate(dob)) {
+            return "Date of Birth must be a valid date (YYYY-MM-DD).";
+        }
+        if (!Validator.isNotEmpty(gender) || !NAME_PATTERN.matcher(gender).matches()) {
+            return "Gender must contain only letters.";
+        }
+        if (!Validator.isNotEmpty(species) || !SPECIES_PATTERN.matcher(species).matches()) {
+            return "Species must contain only letters and spaces.";
+        }
+        if (!Validator.isNotEmpty(breed) || !BREED_PATTERN.matcher(breed).matches()) {
+            return "Breed must contain only letters, numbers, and spaces.";
+        }
+        if (!Validator.isValidID(clientId)) {
+            return "Client ID must follow pattern AAA-1234.";
+        }
+        return null;
+    }
+
 
     private void applySorting() {
         String column = (String) cbSortBy.getSelectedItem();
@@ -360,3 +379,4 @@ public class PatientManager extends JPanel {
     }
 
 }
+
