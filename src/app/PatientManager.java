@@ -295,11 +295,11 @@ public class PatientManager extends JPanel {
             String idText = txtID.getText().trim();
             String nameText = txtName.getText().trim();
             String dobText = txtDOB.getText().trim();
-            String genderText = (String) cbGender.getSelectedItem();
+            String genderText = ((String) cbGender.getSelectedItem()).trim();
             String speciesText = txtSpecies.getText().trim();
             String breedText = txtBreed.getText().trim();
             String remarksText = txtRemarks.getText().trim();
-            String clientIdText = (String) cbClientID.getSelectedItem();
+            String clientIdText = ((String) cbClientID.getSelectedItem()).trim();
 
             // Validate
             String errorMsg = validatePatientInput(idText, nameText, dobText, genderText, speciesText, breedText, clientIdText);
@@ -315,7 +315,7 @@ public class PatientManager extends JPanel {
                     genderText,
                     speciesText,
                     breedText,
-                    remarksText,
+                    txtRemarks.getText().trim(),
                     clientIdText
             );
 
