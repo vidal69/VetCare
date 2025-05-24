@@ -162,4 +162,37 @@ public class scheduleClientDAO {
         return list;
     }
 
+    public List<ScheduleClient> getAllAppointmentsSorted(String column, String order) {
+        List<ScheduleClient> list = new ArrayList<>();
+
+        // Whitelist to prevent SQL injection
+        List<String> validColumns = List.of("DoctorID", "ClientID", "AppointmentType", "AppointmentDate", "AppointmentTime", "Status", "Remarks");
+        List<String> validOrders = List.of("ASC", "DESC");
+
+        if (!validColumns.contains(column)) column = "AppointmentDate";
+        if (!validOrders.contains(order.toUpperCase())) order = "ASC";
+
+        String sql = "SELECT * FROM Schedule_Client ORDER BY " + column + " " + order;
+
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                ScheduleClient sc = new ScheduleClient(
+                        rs.getString("DoctorID"),
+                        rs.getString("ClientID"),
+                        rs.getString("AppointmentType"),
+                        rs.getDate("AppointmentDate").toLocalDate(),
+                        rs.getTime("AppointmentTime").toLocalTime(),
+                        rs.getString("Status"),
+                        rs.getString("Remarks")
+                );
+                list.add(sc);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

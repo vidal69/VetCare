@@ -49,6 +49,9 @@ public class PatientManager extends JPanel {
     private JButton btnEdit;
     private JButton btnDelete;
 
+    private JComboBox<String> cbSortBy;
+    private JToggleButton btnSortOrder;
+
     public PatientManager() {
         this.mainGUI = mainGUI;
 
@@ -123,8 +126,10 @@ public class PatientManager extends JPanel {
         centerPanel.add(paginationPanel, BorderLayout.SOUTH);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Buttons
-        JPanel buttons = new JPanel();
+        // Buttons and Sort Panel in Bottom Panel
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnAdd = new JButton("Add");
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
@@ -133,7 +138,19 @@ public class PatientManager extends JPanel {
         buttons.add(btnEdit);
         buttons.add(btnDelete);
         buttons.add(btnRefresh);
-        add(buttons, BorderLayout.SOUTH);
+
+        cbSortBy = new JComboBox<>(new String[] {
+            "PatientID", "Name", "DateOfBirth", "Gender", "Species", "Breed", "ClientID"
+        });
+        btnSortOrder = new JToggleButton("ASC");
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        sortPanel.add(new JLabel("Sort by:"));
+        sortPanel.add(cbSortBy);
+        sortPanel.add(btnSortOrder);
+
+        bottomPanel.add(buttons, BorderLayout.NORTH);
+        bottomPanel.add(sortPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         // CRUDL button listeners
         btnAdd.addActionListener(e -> showPatientDialog(null));
@@ -180,6 +197,12 @@ public class PatientManager extends JPanel {
         btnClear.addActionListener(e -> {
             txtSearch.setText("");
             loadData();
+        });
+
+        cbSortBy.addActionListener(e -> applySorting());
+        btnSortOrder.addActionListener(e -> {
+            btnSortOrder.setText(btnSortOrder.isSelected() ? "DESC" : "ASC");
+            applySorting();
         });
 
         loadData();
@@ -328,5 +351,12 @@ public class PatientManager extends JPanel {
         }
     }
 
+    private void applySorting() {
+        String column = (String) cbSortBy.getSelectedItem();
+        String order = btnSortOrder.isSelected() ? "DESC" : "ASC";
+        patientList = dao.getAllPatientsSorted(column, order);
+        currentPage = 1;
+        updateTable();
+    }
 
 }

@@ -30,6 +30,9 @@ public class TransactionManager extends JPanel {
     private JComboBox<String> cbFields;
     private JTextField txtSearch;
 
+    private JComboBox<String> cbSortBy;
+    private JToggleButton btnSortOrder;
+
     private List<TransactClient> transactionList = new ArrayList<>();
     private int currentPage = 1;
     private int totalPages = 1;
@@ -108,8 +111,9 @@ public class TransactionManager extends JPanel {
         centerPanel.add(paginationPanel, BorderLayout.SOUTH);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Buttons panel
-        JPanel buttons = new JPanel();
+        // Bottom panel (CRUD buttons + Sort By)
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JButton btnAdd = new JButton("Add");
         JButton btnEdit = new JButton("Edit");
         JButton btnDelete = new JButton("Delete");
@@ -118,7 +122,26 @@ public class TransactionManager extends JPanel {
         buttons.add(btnEdit);
         buttons.add(btnDelete);
         buttons.add(btnRefresh);
-        add(buttons, BorderLayout.SOUTH);
+
+        cbSortBy = new JComboBox<>(new String[] {
+            "DoctorID", "ClientID", "TotalBills", "Receipt", "TransactionDate", "TransactionTime"
+        });
+        btnSortOrder = new JToggleButton("ASC");
+
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        sortPanel.add(new JLabel("Sort by:"));
+        sortPanel.add(cbSortBy);
+        sortPanel.add(btnSortOrder);
+
+        bottomPanel.add(buttons, BorderLayout.NORTH);
+        bottomPanel.add(sortPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);
+        // Sorting logic listeners
+        cbSortBy.addActionListener(e -> applySorting());
+        btnSortOrder.addActionListener(e -> {
+            btnSortOrder.setText(btnSortOrder.isSelected() ? "DESC" : "ASC");
+            applySorting();
+        });
 
         btnAdd.addActionListener(e -> showTransactionDialog(null));
 
@@ -176,6 +199,14 @@ public class TransactionManager extends JPanel {
 
     public void loadData() {
         transactionList = dao.getAllTransactions();
+        currentPage = 1;
+        updateTable();
+    }
+
+    private void applySorting() {
+        String column = (String) cbSortBy.getSelectedItem();
+        String order = btnSortOrder.isSelected() ? "DESC" : "ASC";
+        transactionList = dao.getAllTransactionsSorted(column, order);
         currentPage = 1;
         updateTable();
     }

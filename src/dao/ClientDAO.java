@@ -134,4 +134,29 @@ public class ClientDAO {
             rs.getString("Bills")
         );
     }
+
+    public List<Client> getAllClientsSorted(String column, String order) {
+        List<Client> list = new ArrayList<>();
+
+        // Whitelist to prevent SQL injection
+        List<String> validColumns = List.of("ClientID", "FirstName", "LastName", "Address", "ContactInfo", "Bills");
+        List<String> validOrders = List.of("ASC", "DESC");
+
+        if (!validColumns.contains(column)) column = "ClientID";
+        if (!validOrders.contains(order.toUpperCase())) order = "ASC";
+
+        String sql = "SELECT * FROM Client ORDER BY " + column + " " + order;
+
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                list.add(extractClient(rs));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

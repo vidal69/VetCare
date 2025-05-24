@@ -26,6 +26,9 @@ public class ClientManager extends JPanel {
 
     private JComboBox<String> cbFields;
     private JTextField txtSearch;
+    // Sorting controls
+    private JComboBox<String> cbSortBy;
+    private JToggleButton btnSortOrder;
 
     // Only letters and spaces for names
     private static final Pattern NAME_PATTERN = Pattern.compile("^[A-Za-z ]+$");
@@ -120,8 +123,10 @@ public class ClientManager extends JPanel {
         centerPanel.add(paginationPanel, BorderLayout.SOUTH);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Buttons
-        JPanel buttons = new JPanel();
+        // --- Bottom Panel for Buttons and Sorting Controls ---
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnAdd = new JButton("Add");
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
@@ -130,8 +135,19 @@ public class ClientManager extends JPanel {
         buttons.add(btnEdit);
         buttons.add(btnDelete);
         buttons.add(btnRefresh);
-        add(buttons, BorderLayout.SOUTH);
 
+        cbSortBy = new JComboBox<>(new String[] {
+            "ClientID", "FirstName", "LastName", "Address", "ContactInfo", "Bills"
+        });
+        btnSortOrder = new JToggleButton("ASC");
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        sortPanel.add(new JLabel("Sort by:"));
+        sortPanel.add(cbSortBy);
+        sortPanel.add(btnSortOrder);
+
+        bottomPanel.add(buttons, BorderLayout.NORTH);
+        bottomPanel.add(sortPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         // Actions
         btnAdd.addActionListener(e -> showClientDialog(null));
@@ -173,6 +189,13 @@ public class ClientManager extends JPanel {
         btnClear.addActionListener(e -> {
             txtSearch.setText("");
             loadData();
+        });
+
+        // Sorting actions
+        cbSortBy.addActionListener(e -> applySorting());
+        btnSortOrder.addActionListener(e -> {
+            btnSortOrder.setText(btnSortOrder.isSelected() ? "DESC" : "ASC");
+            applySorting();
         });
 
         loadData();
@@ -311,7 +334,13 @@ public class ClientManager extends JPanel {
     public ClientManager() {
         initComponents(); // critical for building table, scroll pane, etc.
     }
+
+    // Sorting logic
+    private void applySorting() {
+        String column = (String) cbSortBy.getSelectedItem();
+        String order = btnSortOrder.isSelected() ? "DESC" : "ASC";
+        clientList = dao.getAllClientsSorted(column, order);
+        currentPage = 1;
+        updateTable();
+    }
 }
-
-
-

@@ -146,4 +146,37 @@ public class transactClientDAO {
             return false;
         }
     }
+
+    public List<TransactClient> getAllTransactionsSorted(String column, String order) {
+        List<TransactClient> list = new ArrayList<>();
+
+        // Whitelist valid column names and order directions to prevent SQL injection
+        List<String> validColumns = List.of("DoctorID", "ClientID", "TotalBills", "Receipt", "TransactionDate", "TransactionTime");
+        List<String> validOrders = List.of("ASC", "DESC");
+
+        if (!validColumns.contains(column)) column = "TransactionDate";
+        if (!validOrders.contains(order.toUpperCase())) order = "ASC";
+
+        String sql = "SELECT * FROM Transact_Client ORDER BY " + column + " " + order;
+
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                TransactClient tc = new TransactClient(
+                        rs.getString("DoctorID"),
+                        rs.getString("ClientID"),
+                        rs.getString("TotalBills"),
+                        rs.getString("Receipt"),
+                        rs.getDate("TransactionDate").toLocalDate(),
+                        rs.getTime("TransactionTime").toLocalTime()
+                );
+                list.add(tc);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

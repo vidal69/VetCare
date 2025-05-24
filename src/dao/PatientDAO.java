@@ -142,4 +142,39 @@ public class PatientDAO {
             return false;
         }
     }
+
+    public List<Patient> getAllPatientsSorted(String column, String order) {
+        List<Patient> list = new ArrayList<>();
+
+        // Whitelist columns and order to avoid SQL injection
+        List<String> validColumns = List.of("PatientID", "Name", "DateOfBirth", "Gender", "Species", "Breed", "ClientID");
+        List<String> validOrders = List.of("ASC", "DESC");
+
+        if (!validColumns.contains(column)) column = "PatientID";
+        if (!validOrders.contains(order.toUpperCase())) order = "ASC";
+
+        String sql = "SELECT * FROM Patient ORDER BY " + column + " " + order;
+
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                Patient p = new Patient(
+                        rs.getString("PatientID"),
+                        rs.getString("Name"),
+                        rs.getDate("DateOfBirth").toLocalDate(),
+                        rs.getString("Gender"),
+                        rs.getString("Species"),
+                        rs.getString("Breed"),
+                        rs.getString("Remarks"),
+                        rs.getString("ClientID")
+                );
+                list.add(p);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

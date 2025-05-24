@@ -122,4 +122,34 @@ public class DoctorDAO {
         }
         return list;
     }
+
+    public List<Doctor> getAllDoctorsSorted(String column, String order) {
+        List<Doctor> list = new ArrayList<>();
+
+        // Sanitize inputs
+        List<String> validColumns = List.of("DoctorID", "FirstName", "LastName", "DateOfBirth");
+        List<String> validOrders = List.of("ASC", "DESC");
+
+        if (!validColumns.contains(column)) column = "DoctorID";
+        if (!validOrders.contains(order.toUpperCase())) order = "ASC";
+
+        String sql = "SELECT * FROM Doctor ORDER BY " + column + " " + order;
+
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                list.add(new Doctor(
+                        rs.getString("DoctorID"),
+                        rs.getString("FirstName"),
+                        rs.getString("LastName"),
+                        rs.getDate("DateOfBirth").toLocalDate()
+                ));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

@@ -47,6 +47,9 @@ public class AppointmentManager extends JPanel {
     private JButton btnEdit;
     private JButton btnDelete;
 
+    private JComboBox<String> cbSortBy;
+    private JToggleButton btnSortOrder;
+
     public AppointmentManager() {
         setLayout(new BorderLayout());
 
@@ -124,8 +127,9 @@ public class AppointmentManager extends JPanel {
         centerPanel.add(paginationPanel, BorderLayout.SOUTH);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Buttons
-        JPanel buttons = new JPanel();
+        // Buttons and sorting
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnAdd = new JButton("Add");
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
@@ -134,7 +138,20 @@ public class AppointmentManager extends JPanel {
         buttons.add(btnEdit);
         buttons.add(btnDelete);
         buttons.add(btnRefresh);
-        add(buttons, BorderLayout.SOUTH);
+
+        cbSortBy = new JComboBox<>(new String[] {
+            "DoctorID", "ClientID", "AppointmentType", "AppointmentDate", "AppointmentTime", "Status", "Remarks"
+        });
+        btnSortOrder = new JToggleButton("ASC");
+
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        sortPanel.add(new JLabel("Sort by:"));
+        sortPanel.add(cbSortBy);
+        sortPanel.add(btnSortOrder);
+
+        bottomPanel.add(buttons, BorderLayout.NORTH);
+        bottomPanel.add(sortPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         // CRUD button listeners
         btnAdd.addActionListener(e -> showAppointmentDialog(null));
@@ -171,7 +188,6 @@ public class AppointmentManager extends JPanel {
 
         btnRefresh.addActionListener(e -> loadData());
 
-
         // Search action
         btnSearch.addActionListener(e -> {
             String field = (String) cbFields.getSelectedItem();
@@ -188,6 +204,12 @@ public class AppointmentManager extends JPanel {
             appointmentList = dao.getAllAppointments();
             currentPage = 1;
             updateTable();
+        });
+
+        cbSortBy.addActionListener(e -> applySorting());
+        btnSortOrder.addActionListener(e -> {
+            btnSortOrder.setText(btnSortOrder.isSelected() ? "DESC" : "ASC");
+            applySorting();
         });
 
     }
@@ -231,7 +253,13 @@ public class AppointmentManager extends JPanel {
         loadData();
     }
 
-
+    private void applySorting() {
+        String column = (String) cbSortBy.getSelectedItem();
+        String order = btnSortOrder.isSelected() ? "DESC" : "ASC";
+        appointmentList = dao.getAllAppointmentsSorted(column, order);
+        currentPage = 1;
+        updateTable();
+    }
 
     private void showAppointmentDialog(ScheduleClient sc) {
         // Dropdown for DoctorID
