@@ -295,41 +295,74 @@ public class AppointmentManager extends JPanel {
         panel.add(new JLabel("Status:")); panel.add(txtStatus);
         panel.add(new JLabel("Remarks:")); panel.add(txtRemarks);
 
-        int result = JOptionPane.showConfirmDialog(this, panel,
-            sc == null ? "Add Appointment" : "Edit Appointment",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(this, panel,
+                sc == null ? "Add Appointment" : "Edit Appointment",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        if (result == JOptionPane.OK_OPTION) {
-            // Validation
-            if (cbDoc.getSelectedItem() == null ||
-                cbClient.getSelectedItem() == null ||
-                !Validator.isNotEmpty(txtType.getText()) ||
-                !Validator.isValidDate(txtDate.getText()) ||
-                !Validator.isValidTime(txtTime.getText()) ||
-                !Validator.isNotEmpty(txtStatus.getText())) {
-                JOptionPane.showMessageDialog(this, "Please check your inputs.");
-                return;
+            if (result != JOptionPane.OK_OPTION) {
+                break; // user cancelled
             }
+
+            String doctorID = (String) cbDoc.getSelectedItem();
+            String clientID = (String) cbClient.getSelectedItem();
+            String type = txtType.getText().trim();
+            String date = txtDate.getText().trim();
+            String time = txtTime.getText().trim();
+            String status = txtStatus.getText().trim();
+            String remarks = txtRemarks.getText().trim();
+
+            // Validate inputs
+            String errorMsg = validateAppointmentInput(doctorID, clientID, type, date, time, status);
+            if (errorMsg != null) {
+                JOptionPane.showMessageDialog(this, errorMsg, "Input Error", JOptionPane.ERROR_MESSAGE);
+                continue;
+            }
+
             ScheduleClient newSc = new ScheduleClient(
-                ((String) cbDoc.getSelectedItem()).trim(),
-                ((String) cbClient.getSelectedItem()).trim(),
-                txtType.getText().trim(),
-                LocalDate.parse(txtDate.getText().trim()),
-                LocalTime.parse(txtTime.getText().trim()),
-                txtStatus.getText().trim(),
-                txtRemarks.getText().trim()
+                doctorID, clientID, type,
+                LocalDate.parse(date),
+                LocalTime.parse(time),
+                status, remarks
             );
+
             if (sc == null) {
                 dao.addAppointment(newSc);
+                JOptionPane.showMessageDialog(this, "Appointment added successfully.");
             } else {
-       boolean success = dao.updateAppointment(sc, newSc);
+                boolean success = dao.updateAppointment(sc, newSc);
                 if (success) {
                     JOptionPane.showMessageDialog(this, "Appointment updated successfully.");
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to update appointment.");
+                    JOptionPane.showMessageDialog(this, "Failed to update appointment.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                    continue;
                 }
             }
+
             loadData();
+            break; 
+            }
         }
+        
+    private String validateAppointmentInput(String doctorID, String clientID, String type, String date, String time, String status) {
+        if (doctorID == null || doctorID.isEmpty()) {
+            return "Doctor ID must be selected.";
+        }
+        if (clientID == null || clientID.isEmpty()) {
+            return "Client ID must be selected.";
+        }
+        if (!Validator.isNotEmpty(type)) {
+            return "Appointment type cannot be empty.";
+        }
+        if (!Validator.isValidDate(date)) {
+            return "Date must be valid and follow format YYYY-MM-DD.";
+        }
+        if (!Validator.isValidTime(time)) {
+            return "Time must be valid and follow format HH:MM:SS.";
+        }
+        if (!Validator.isNotEmpty(status)) {
+            return "Status cannot be empty.";
+        }
+        return null;
     }
 }
