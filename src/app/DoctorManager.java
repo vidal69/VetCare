@@ -1,15 +1,24 @@
 package app;
 
 import dao.DoctorDAO;
-import java.awt.*;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import models.Doctor;
 import utils.Validator;
+import javax.swing.JOptionPane;
+
+import java.util.regex.Pattern;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.LocalDate;
+import java.util.List;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
+import javax.swing.JLabel;
+import java.awt.FlowLayout;
+import java.util.ArrayList;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class DoctorManager extends JPanel {
     private DoctorDAO dao = new DoctorDAO();
