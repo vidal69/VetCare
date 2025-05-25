@@ -266,69 +266,73 @@ public class DoctorManager extends JPanel {
         panel.add(new JLabel("First Name:")); panel.add(txtFirst);
         panel.add(new JLabel("Last Name:")); panel.add(txtLast);
         panel.add(new JLabel("Date of Birth (YYYY-MM-DD):")); panel.add(txtDOB);
+        
+        while(true){
+            int result = JOptionPane.showConfirmDialog(this, panel,
+                d == null ? "Add Doctor" : "Edit Doctor",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        int result = JOptionPane.showConfirmDialog(this, panel,
-            d == null ? "Add Doctor" : "Edit Doctor",
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (result != JOptionPane.OK_OPTION){
+                break;
+            }
 
-        if (result == JOptionPane.OK_OPTION) {
+        
             String idText = txtID.getText().trim();
             String firstText = txtFirst.getText().trim();
             String lastText = txtLast.getText().trim();
             String dobText = txtDOB.getText().trim();
 
-            // DoctorID
-            if (!Validator.isValidID(idText)) {
-                JOptionPane.showMessageDialog(this, "Doctor ID must follow pattern AAA-1234 (3 letters, hyphen, 4 digits).");
-                return;
+            String errorMsg = validateDoctorInput(idText, firstText, lastText, dobText, d == null);
+            if (errorMsg != null){
+                JOptionPane.showMessageDialog(this, errorMsg, "Input Error", JOptionPane.ERROR_MESSAGE);
+                continue;
             }
-
-            // FirstName
-            if (!Validator.isNotEmpty(firstText) || !NAME_PATTERN.matcher(firstText).matches()) {
-                JOptionPane.showMessageDialog(this, "First name must contain only letters and spaces.");
-                return;
-            }
-
-            // LastName
-            if (!Validator.isNotEmpty(lastText) || !NAME_PATTERN.matcher(lastText).matches()) {
-                JOptionPane.showMessageDialog(this, "Last name must contain only letters and spaces.");
-                return;
-            }
-
-            // DateOfBirth
-            if (!Validator.isValidDate(dobText)) {
-                JOptionPane.showMessageDialog(this, "Date of Birth must be a valid date (YYYY-MM-DD).");
-                return;
-            }
-
+            
             Doctor newDoc = new Doctor(
                 idText,
                 firstText,
                 lastText,
                 LocalDate.parse(dobText)
             );
+
             boolean success;
-            if (d == null) {
+            if (d==null){
                 success = dao.addDoctor(newDoc);
-                if (success) {
-                    JOptionPane.showMessageDialog(this, "Doctor added successfully.");
-                } else {
+                if (!success) {
                     JOptionPane.showMessageDialog(this, "Error: Unable to add doctor.", "Add Failed", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    continue;
                 }
-            } else {
-                success = dao.updateDoctor(d, newDoc);
-                if (success) {
+                JOptionPane.showMessageDialog(this, "Doctor added successfully.");
+                } 
+                else {
+                    success = dao.updateDoctor(d, newDoc);
+                    if (!success) {
+                        JOptionPane.showMessageDialog(this, "Error: Unable to update doctor.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+                        continue;
+                    }
                     JOptionPane.showMessageDialog(this, "Doctor updated successfully.");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Error: Unable to update doctor.", "Update Failed", JOptionPane.ERROR_MESSAGE);
-                    return;
                 }
-            }
-            loadData();
+                loadData();
+                break;
         }
     }
 
+    private String validateDoctorInput(String idText, String firstText, String lastText, String dobText, boolean isAdd) {
+        if (isAdd && !Validator.isValidID(idText)) {
+            return "Doctor ID must follow pattern AAA-1234 (3 letters, hyphen, 4 digits).";
+        }
+        if (!Validator.isNotEmpty(firstText) || !NAME_PATTERN.matcher(firstText).matches()) {
+            return "First name must contain only letters and spaces.";
+        }
+        if (!Validator.isNotEmpty(lastText) || !NAME_PATTERN.matcher(lastText).matches()) {
+            return "Last name must contain only letters and spaces.";
+        }
+        if (!Validator.isValidDate(dobText)) {
+            return "Date of Birth must be a valid date (YYYY-MM-DD).";
+        }
+        return null; // no errors
+    }
+         
     public DoctorManager() {
         initComponents(); // critical for building table, scroll pane, etc.
     }
