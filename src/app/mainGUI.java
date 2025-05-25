@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import app.LoginDialog;
 
 
 public class mainGUI extends JFrame {
@@ -167,6 +168,33 @@ public class mainGUI extends JFrame {
         // Bottom panel with status bar and login control
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(statusBar, BorderLayout.WEST);
+
+        //Login 
+        JButton btnLogin = new JButton("Login");
+        btnLogin.addActionListener(e -> {
+            if (currentUser == null) {
+                // Not logged in: show login dialog
+                LoginDialog dialog = new LoginDialog(this);
+                dialog.setVisible(true);
+                String user = dialog.getLoggedInUser();
+                if (user != null) {
+                    currentUser = user;
+                    btnLogin.setText("Logout (" + currentUser + ")");
+                    // TODO: enable/disable modules based on role
+                }
+            } else {
+                // Logged in: perform logout
+                int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to logout?", "Confirm Logout", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    currentUser = null;
+                    btnLogin.setText("Login");
+                    // TODO: disable protected modules or reset UI
+                }
+            }
+        });
+        bottomPanel.add(btnLogin, BorderLayout.EAST);
+        
 
         getContentPane().add(bottomPanel, BorderLayout.SOUTH);
         // Add the split pane (with nav and card panel) to the center
