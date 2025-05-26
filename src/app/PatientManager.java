@@ -1,28 +1,20 @@
 package app;
 
+import dao.ClientDAO;
 import dao.PatientDAO;
+import java.awt.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+import java.util.regex.Pattern;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import models.Patient;
 import utils.Validator;
 
-import javax.swing.JOptionPane;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import dao.ClientDAO;
-import java.util.Vector;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
-
-import java.util.ArrayList;
-
 public class PatientManager extends JPanel {
+    private String userRole;
     private PatientDAO dao = new PatientDAO();
     private ClientDAO clientDao = new ClientDAO();
     private JTable table;
@@ -52,7 +44,8 @@ public class PatientManager extends JPanel {
     private JComboBox<String> cbSortBy;
     private JToggleButton btnSortOrder;
 
-    public PatientManager() {
+    public PatientManager(String role) {
+        this.userRole = role;
         this.mainGUI = mainGUI;
 
         setLayout(new BorderLayout());
@@ -134,6 +127,13 @@ public class PatientManager extends JPanel {
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }
+
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -166,6 +166,11 @@ public class PatientManager extends JPanel {
         });
 
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 // Map selected row to actual index

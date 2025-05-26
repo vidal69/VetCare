@@ -7,6 +7,7 @@ public class LoginDialog extends JDialog {
     private JTextField txtUser = new JTextField(15);
     private JPasswordField txtPass = new JPasswordField(15);
     private String loggedInUser = null;
+    private String loggedInRole = null;
 
     public LoginDialog(Frame owner) {
         super(owner, "Login", true);
@@ -26,6 +27,11 @@ public class LoginDialog extends JDialog {
             String p = new String(txtPass.getPassword());
             if ("admin".equals(u) && "admin".equals(p)) {
                 loggedInUser = u;
+                loggedInRole = "admin";
+                dispose();
+            } else if("viewer".equals(u) && "viewer".equals(p)){
+                loggedInUser = u;
+                loggedInRole = "viewer";
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid credentials.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -70,5 +76,9 @@ public class LoginDialog extends JDialog {
 
     public String getLoggedInUser() {
         return loggedInUser;
+    }
+
+    public String getLoggedInRole() {
+        return loggedInRole;
     }
 }

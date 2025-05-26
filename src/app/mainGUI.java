@@ -1,21 +1,17 @@
 package app;
 
-import javax.swing.*;
-import java.awt.*;
-
 import dbhandler.DBConnection;
+import java.awt.*;
 import java.sql.Connection;
-import javax.swing.Timer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import app.LoginDialog;
+import javax.swing.*;
 
 
 public class mainGUI extends JFrame {
     // Track the current logged-in user
-    private static String currentUser = null;
+    private static String currentUser = "admin";
+    private static String currentRole = "admin"; //Set to null for a non-admin user / member
     private JList<String> navList;
     private CardLayout cardLayout;
     private JPanel cardPanel;
@@ -39,7 +35,7 @@ public class mainGUI extends JFrame {
      * Check if the currently logged-in user is an administrator.
      */
     public static boolean isAdmin() {
-        return "admin".equals(currentUser);
+        return "admin".equals(currentRole);
     }
 
     private final String[] modules = {"Doctors", "Clients", "Patients", "Appointments", "Transactions"};
@@ -83,9 +79,9 @@ public class mainGUI extends JFrame {
         navList.setEnabled(true);
 
         // Initialize module panels
-        doctorManager = new DoctorManager();
-        clientManager = new ClientManager();
-        patientManager = new PatientManager() {
+        doctorManager = new DoctorManager(currentRole);
+        clientManager = new ClientManager(currentRole);
+        patientManager = new PatientManager(currentRole) {
             @Override
             public void loadData() {
                 super.loadData();
@@ -94,7 +90,7 @@ public class mainGUI extends JFrame {
                 // If you have direct row adding code, do null check there.
             }
         };
-        appointmentManager = new AppointmentManager() {
+        appointmentManager = new AppointmentManager(currentRole) {
             @Override
             public void loadData() {
                 super.loadData();
@@ -102,7 +98,7 @@ public class mainGUI extends JFrame {
                 // If you have direct row adding code, do null check there.
             }
         };
-        transactionManager = new TransactionManager() {
+        transactionManager = new TransactionManager(currentRole) {
             @Override
             public void loadData() {
                 super.loadData();
@@ -174,11 +170,12 @@ public class mainGUI extends JFrame {
         btnLogin.addActionListener(e -> {
             if (currentUser == null) {
                 // Not logged in: show login dialog
-                LoginDialog dialog = new LoginDialog(this);
+                LoginDialog dialog = new LoginDialog(null);
                 dialog.setVisible(true);
                 String user = dialog.getLoggedInUser();
                 if (user != null) {
                     currentUser = user;
+                    currentRole = dialog.getLoggedInRole();
                     btnLogin.setText("Logout (" + currentUser + ")");
                     // TODO: enable/disable modules based on role
                 }

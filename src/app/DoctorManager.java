@@ -1,26 +1,18 @@
 package app;
 
 import dao.DoctorDAO;
-import models.Doctor;
-import utils.Validator;
-import javax.swing.JOptionPane;
-
-import java.util.regex.Pattern;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
-import java.util.List;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
 import java.util.ArrayList;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.util.List;
+import java.util.regex.Pattern;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import models.Doctor;
+import utils.Validator;
 
 public class DoctorManager extends JPanel {
+    private String userRole;
     private DoctorDAO dao = new DoctorDAO();
     private JTable table;
     private DefaultTableModel model;
@@ -122,6 +114,13 @@ public class DoctorManager extends JPanel {
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }        
+        
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -155,6 +154,11 @@ public class DoctorManager extends JPanel {
             }
         });
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String id = (String) model.getValueAt(i, 0);
@@ -333,7 +337,8 @@ public class DoctorManager extends JPanel {
         return null; // no errors
     }
          
-    public DoctorManager() {
+    public DoctorManager(String role) {
+        this.userRole = role;
         initComponents(); // critical for building table, scroll pane, etc.
     }
 
