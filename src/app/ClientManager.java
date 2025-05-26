@@ -1,25 +1,17 @@
 package app;
 
 import dao.ClientDAO;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import models.Client;
 import utils.Validator;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
-import java.util.regex.Pattern;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
-import java.util.List;
-import java.util.ArrayList;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 public class ClientManager extends JPanel {
+    private String userRole;
     private ClientDAO dao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
@@ -131,6 +123,13 @@ public class ClientManager extends JPanel {
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }
+
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -161,6 +160,11 @@ public class ClientManager extends JPanel {
             }
         });
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String id = (String) model.getValueAt(i, 0);
@@ -335,8 +339,10 @@ public class ClientManager extends JPanel {
         return null;
     }
 
-    public ClientManager() {
+    public ClientManager(String role) {
+        this.userRole = role;
         initComponents(); // critical for building table, scroll pane, etc.
+        
     }
 
     // Sorting logic
