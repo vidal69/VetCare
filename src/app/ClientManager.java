@@ -168,11 +168,39 @@ public class ClientManager extends JPanel {
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String id = (String) model.getValueAt(i, 0);
+               
+                //Check if it's associated with a Patient
+                if (dao.hasPet(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with Patient(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                //Check if there's existing Appointments
+                if (dao.hasAppointment(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with existing appointment(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                //Check if there's existing Transactions
+                if (dao.hasTransaction(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with existing transaction(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                
+                
                 int confirm = JOptionPane.showConfirmDialog(this,
                     "Delete selected client?", "Confirm", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deleteClient(id);
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Client has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a client to delete.");

@@ -181,6 +181,7 @@ public class AppointmentManager extends JPanel {
                       sc.getAppointmentTime()
                   );
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Appointment has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select an appointment to delete.");
