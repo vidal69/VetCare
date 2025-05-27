@@ -181,6 +181,7 @@ public class PatientManager extends JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deletePatient(p.getPatientID());
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Patient has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a patient to delete.");

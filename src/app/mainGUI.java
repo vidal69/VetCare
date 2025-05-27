@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 
 
+
 public class mainGUI extends JFrame {
     // Track the current logged-in user
     private static String currentUser = "admin";
@@ -16,6 +17,7 @@ public class mainGUI extends JFrame {
     private CardLayout cardLayout;
     private JPanel cardPanel;
     private JLabel statusBar;
+    private JButton btnLogin;
 
     // Module panels as fields
     private DoctorManager doctorManager;
@@ -166,18 +168,19 @@ public class mainGUI extends JFrame {
         bottomPanel.add(statusBar, BorderLayout.WEST);
 
         //Login 
-        JButton btnLogin = new JButton("Login");
+        btnLogin = new JButton("Login");
         btnLogin.addActionListener(e -> {
             if (currentUser == null) {
-                // Not logged in: show login dialog
+                
                 LoginDialog dialog = new LoginDialog(null);
                 dialog.setVisible(true);
                 String user = dialog.getLoggedInUser();
                 if (user != null) {
+                   
                     currentUser = user;
                     currentRole = dialog.getLoggedInRole();
                     btnLogin.setText("Logout (" + currentUser + ")");
-                    // TODO: enable/disable modules based on role
+                    
                 }
             } else {
                 // Logged in: perform logout
@@ -186,12 +189,12 @@ public class mainGUI extends JFrame {
                 if (confirm == JOptionPane.YES_OPTION) {
                     currentUser = null;
                     btnLogin.setText("Login");
-                    // TODO: disable protected modules or reset UI
+                    
                 }
             }
         });
         bottomPanel.add(btnLogin, BorderLayout.EAST);
-        
+        btnLogin.setText(currentUser != null ? "Logout (" + currentUser + ")" : "Login");
 
         getContentPane().add(bottomPanel, BorderLayout.SOUTH);
         // Add the split pane (with nav and card panel) to the center

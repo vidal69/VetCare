@@ -162,11 +162,31 @@ public class DoctorManager extends JPanel {
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String id = (String) model.getValueAt(i, 0);
+                
+                // Check if there's existing Appointments
+                if (dao.hasAppointment(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Doctor. This Doctor is associated with existing appointment(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                }    
+
+                //Check if there's existing Transactions
+                if (dao.hasTransaction(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Doctor. This Doctor is associated with existing transaction(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                }
+
+
+
                 int confirm = JOptionPane.showConfirmDialog(this,
                     "Delete selected doctor?", "Confirm", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deleteDoctor(id);
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Doctor has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a doctor to delete.");

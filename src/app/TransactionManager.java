@@ -178,6 +178,7 @@ public class TransactionManager extends JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deleteTransaction(docId, clientId, date, time);
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Transaction has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a transaction to delete.");

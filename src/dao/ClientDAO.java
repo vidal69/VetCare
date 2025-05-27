@@ -2,11 +2,10 @@ package dao;
 
 
 import dbhandler.DBConnection;
-import models.Client;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import models.Client;
 
 public class ClientDAO {
     private final Connection conn = DBConnection.getConnection();
@@ -103,6 +102,47 @@ public class ClientDAO {
             try { conn.setAutoCommit(true); } catch (SQLException ignore) {}
         }
     }
+
+    public boolean hasAppointment(String clientID){
+        String sql = "SELECT 1 FROM schedule_client WHERE ClientID = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setString(1, clientID);
+            try (ResultSet rs = ps.executeQuery()){
+                return rs.next(); 
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean hasTransaction(String clientID){
+        String sql = "SELECT 1 FROM transact_client WHERE ClientID = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setString(1, clientID);
+            try (ResultSet rs = ps.executeQuery()){
+                return rs.next(); 
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean hasPet(String clientID){
+        String sql = "SELECT 1 FROM patient WHERE ClientID = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setString(1, clientID);
+            try (ResultSet rs = ps.executeQuery()){
+                return rs.next(); 
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    
 
     /**
      * Search clients by a given column and keyword.

@@ -1,15 +1,10 @@
 package dao;
 
 import dbhandler.DBConnection;
-import models.Doctor;
-
 import java.sql.*;
-import java.time.LocalDate;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import models.Doctor;
 
 public class DoctorDAO {
     private final Connection conn = DBConnection.getConnection();
@@ -93,6 +88,32 @@ public class DoctorDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, doctorID);
             return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean hasAppointment(String doctorID){
+        String sql = "SELECT 1 FROM schedule_client WHERE DoctorID = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setString(1, doctorID);
+            try (ResultSet rs = ps.executeQuery()){
+                return rs.next(); 
+            }
+        } catch (SQLException ex){
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean hasTransaction(String doctorID) {
+        String sql = "SELECT 1 FROM transact_client WHERE DoctorID = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, doctorID);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next(); // true if any transaction exists
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
             return false;
