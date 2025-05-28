@@ -1,32 +1,20 @@
 package app;
-import app.mainGUI;
-import javax.swing.JOptionPane;
-
-import dao.scheduleClientDAO;
-import dao.DoctorDAO;
 import dao.ClientDAO;
-import java.util.Vector;
-import javax.swing.JComboBox;
-import models.ScheduleClient;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import dao.DoctorDAO;
+import dao.scheduleClientDAO;
 import java.awt.*;
-import java.awt.event.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
-import utils.Validator;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
-import java.util.List;
-import models.ScheduleClient;
 import java.util.ArrayList;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.List;
+import java.util.Vector;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import models.ScheduleClient;
+import utils.Validator;
 
 public class AppointmentManager extends JPanel {
+    private String userRole;
     private scheduleClientDAO dao = new scheduleClientDAO();
     private DoctorDAO doctorDao = new DoctorDAO();
     private ClientDAO clientDao = new ClientDAO();
@@ -38,7 +26,7 @@ public class AppointmentManager extends JPanel {
     private List<ScheduleClient> appointmentList = new ArrayList<>();
     private int currentPage = 1;
     private int totalPages = 1;
-    private static final int PAGE_SIZE = 50;
+    private static final int PAGE_SIZE = 10;
     private JButton prevBtn, nextBtn;
     private JTextField pageField;
     private JLabel totalPagesLabel;
@@ -50,9 +38,10 @@ public class AppointmentManager extends JPanel {
     private JComboBox<String> cbSortBy;
     private JToggleButton btnSortOrder;
 
-    public AppointmentManager() {
+    public AppointmentManager(String role) {
         setLayout(new BorderLayout());
-
+        this.userRole = role;
+       
         // --- Search Panel ---
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         cbFields = new JComboBox<>(new String[]{
@@ -134,6 +123,13 @@ public class AppointmentManager extends JPanel {
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }
+
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -167,6 +163,11 @@ public class AppointmentManager extends JPanel {
         });
 
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 ScheduleClient sc = appointmentList.get(i);
@@ -180,6 +181,7 @@ public class AppointmentManager extends JPanel {
                       sc.getAppointmentTime()
                   );
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Appointment has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select an appointment to delete.");

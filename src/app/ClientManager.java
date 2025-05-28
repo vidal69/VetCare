@@ -1,25 +1,17 @@
 package app;
 
 import dao.ClientDAO;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import models.Client;
 import utils.Validator;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
-import java.util.regex.Pattern;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
-import java.util.List;
-import java.util.ArrayList;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 public class ClientManager extends JPanel {
+    private String userRole;
     private ClientDAO dao = new ClientDAO();
     private JTable table;
     private DefaultTableModel model;
@@ -38,7 +30,7 @@ public class ClientManager extends JPanel {
     private List<Client> clientList = new ArrayList<>();
     private int currentPage = 1;
     private int totalPages = 1;
-    private static final int PAGE_SIZE = 50;
+    private static final int PAGE_SIZE = 10;
     private JButton prevBtn, nextBtn;
     private JTextField pageField;
     private JLabel totalPagesLabel;
@@ -131,6 +123,13 @@ public class ClientManager extends JPanel {
         btnEdit = new JButton("Edit");
         btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }
+
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -161,14 +160,47 @@ public class ClientManager extends JPanel {
             }
         });
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String id = (String) model.getValueAt(i, 0);
+               
+                //Check if it's associated with a Patient
+                if (dao.hasPet(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with Patient(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                //Check if there's existing Appointments
+                if (dao.hasAppointment(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with existing appointment(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                //Check if there's existing Transactions
+                if (dao.hasTransaction(id)){
+                    JOptionPane.showMessageDialog(this, "Cannot delete Client. This Client is associated with existing transaction(s).",
+                        "Delete Blocked", JOptionPane.WARNING_MESSAGE);
+                    
+                    return;
+                } 
+
+                
+                
                 int confirm = JOptionPane.showConfirmDialog(this,
                     "Delete selected client?", "Confirm", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deleteClient(id);
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Client has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a client to delete.");
@@ -335,8 +367,10 @@ public class ClientManager extends JPanel {
         return null;
     }
 
-    public ClientManager() {
+    public ClientManager(String role) {
+        this.userRole = role;
         initComponents(); // critical for building table, scroll pane, etc.
+        
     }
 
     // Sorting logic

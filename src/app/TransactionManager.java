@@ -1,27 +1,20 @@
 package app;
-import javax.swing.JOptionPane;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import dao.ClientDAO;
+import dao.DoctorDAO;
+import dao.transactClientDAO;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
-import dao.transactClientDAO;
+import java.util.Vector;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import models.TransactClient;
 import utils.Validator;
-import dao.DoctorDAO;
-import dao.ClientDAO;
-import java.util.Vector;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import java.awt.FlowLayout;
-import java.util.ArrayList;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 public class TransactionManager extends JPanel {
+    private String userRole;
     private transactClientDAO dao = new transactClientDAO();
     private DoctorDAO doctorDao = new DoctorDAO();
     private ClientDAO clientDao = new ClientDAO();
@@ -36,12 +29,13 @@ public class TransactionManager extends JPanel {
     private List<TransactClient> transactionList = new ArrayList<>();
     private int currentPage = 1;
     private int totalPages = 1;
-    private static final int PAGE_SIZE = 50;
+    private static final int PAGE_SIZE = 10;
     private JButton prevBtn, nextBtn;
     private JTextField pageField;
     private JLabel totalPagesLabel;
 
-    public TransactionManager() {
+    public TransactionManager(String role) {
+        this.userRole = role;
         setLayout(new BorderLayout());
 
         // --- Search Panel ---
@@ -118,6 +112,13 @@ public class TransactionManager extends JPanel {
         JButton btnEdit = new JButton("Edit");
         JButton btnDelete = new JButton("Delete");
         JButton btnRefresh = new JButton("Refresh");
+
+        if (!"admin".equalsIgnoreCase(userRole)) {
+            btnAdd.setEnabled(false);
+            btnEdit.setEnabled(false);
+            btnDelete.setEnabled(false);
+        }
+
         buttons.add(btnAdd);
         buttons.add(btnEdit);
         buttons.add(btnDelete);
@@ -161,6 +162,11 @@ public class TransactionManager extends JPanel {
             }
         });
         btnDelete.addActionListener(e -> {
+            if (!"admin".equalsIgnoreCase(userRole)){
+                JOptionPane.showMessageDialog(this, "You do not have permission to delete appointments.");
+                return;
+            }
+
             int i = table.getSelectedRow();
             if (i >= 0) {
                 String docId = (String) model.getValueAt(i, 0);
@@ -172,6 +178,7 @@ public class TransactionManager extends JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                     dao.deleteTransaction(docId, clientId, date, time);
                     loadData();
+                    JOptionPane.showMessageDialog(this, "Transaction has been deleted succesfully!");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Select a transaction to delete.");
