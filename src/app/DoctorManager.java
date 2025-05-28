@@ -25,7 +25,7 @@ public class DoctorManager extends JPanel {
     private List<Doctor> doctorList = new ArrayList<>();
     private int currentPage = 1;
     private int totalPages = 1;
-    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_SIZE = 50;
     private JButton prevBtn, nextBtn;
     private JTextField pageField;
     private JLabel totalPagesLabel;
